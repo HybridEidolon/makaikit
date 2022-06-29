@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    "dll-injector-dinput8",
+    "dsarcfl",
+    "fafullfs",
+    "modloader-d6",
+    "ykcmp",
+]

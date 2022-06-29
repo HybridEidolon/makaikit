@@ -1,0 +1,4 @@
+[package]
+name = "makaikit-fafullfs"
+version = "0.1.0-alpha.0"
+edition = "2021"
