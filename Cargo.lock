@@ -235,6 +235,9 @@ version = "0.1.0-alpha.0"
 [[package]]
 name = "makaikit-fafullfs"
 version = "0.1.0-alpha.0"
+dependencies = [
+ "thiserror",
+]
 
 [[package]]
 name = "makaikit-modloader-d6"
