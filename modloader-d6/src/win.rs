@@ -1,12 +1,20 @@
-use std::ffi::CStr;
+use std::{
+    ffi::{CStr, CString},
+    path::PathBuf,
+};
 
 use detour::RawDetour;
 use log::LevelFilter;
-use log4rs::{append::file::FileAppender, encode::pattern::PatternEncoder, Config, config::{Appender, Root}};
+use log4rs::{
+    append::file::FileAppender,
+    config::{Appender, Root},
+    encode::pattern::PatternEncoder,
+    Config,
+};
 use winapi::{
     shared::{
         minwindef::{DWORD, HMODULE, LPVOID},
-        ntdef::BOOLEAN,
+        ntdef::{BOOLEAN, LPCSTR},
     },
     um::{
         libloaderapi::{DisableThreadLibraryCalls, GetModuleHandleA},
@@ -63,34 +71,186 @@ fn aob_search(buf: &[u8], start: LPVOID, dist: usize) -> Option<LPVOID> {
     None
 }
 
-static AOB_LOAD_FROM_ARCHIVE_FUNC: &'static [u8] = &[
-    0x40, 0x55, 0x56, 0x57, 0x41, 0x56, 0x41, 0x57, 0x48, 0x81,
-    0xEC, 0xD0, 0x00, 0x00, 0x00, 0x48, 0xC7, 0x44, 0x24, 0x20,
-    0xFE, 0xFF, 0xFF, 0xFF, 0x48, 0x89, 0x9C, 0x24, 0x18, 0x01,
-    0x00, 0x00, 0x48, 0x8B, 0x05, 0xE9, 0xA9, 0xB3, 0x00, 0x48,
-    0x33, 0xC4, 0x48, 0x89, 0x84, 0x24, 0xC0, 0x00, 0x00, 0x00,
-    0x45, 0x0F, 0xB6, 0xF1, 0x49, 0x8B, 0xE8, 0x48, 0x8B, 0xF2,
-    0x48, 0x8B, 0xD9, 0x48, 0x89, 0x4C, 0x24, 0x28, 0x4C, 0x89,
-    0x44, 0x24, 0x30
+// static AOB_LOAD_FROM_ARCHIVE_FUNC: &'static [u8] = &[
+//     0x40, 0x55, 0x56, 0x57, 0x41, 0x56, 0x41, 0x57, 0x48, 0x81, 0xEC, 0xD0, 0x00, 0x00, 0x00, 0x48,
+//     0xC7, 0x44, 0x24, 0x20, 0xFE, 0xFF, 0xFF, 0xFF, 0x48, 0x89, 0x9C, 0x24, 0x18, 0x01, 0x00, 0x00,
+//     0x48, 0x8B, 0x05, 0xE9, 0xA9, 0xB3, 0x00, 0x48, 0x33, 0xC4, 0x48, 0x89, 0x84, 0x24, 0xC0, 0x00,
+//     0x00, 0x00, 0x45, 0x0F, 0xB6, 0xF1, 0x49, 0x8B, 0xE8, 0x48, 0x8B, 0xF2, 0x48, 0x8B, 0xD9, 0x48,
+//     0x89, 0x4C, 0x24, 0x28, 0x4C, 0x89, 0x44, 0x24, 0x30,
+// ];
+
+// static AOB_GET_FILE_FROM_ARCHIVE_FUNC: &'static [u8] = &[
+//     0x40, 0x53, 0x55, 0x56, 0x57, 0x41, 0x56, 0x41, 0x57, 0x48, 0x83, 0xEC, 0x78, 0x48, 0xC7, 0x44,
+//     0x24, 0x50, 0xFE, 0xFF, 0xFF, 0xFF, 0x48, 0x8B, 0xF2, 0x4C, 0x8B, 0xF1, 0x48, 0x89, 0x54, 0x24,
+//     0x48, 0x45, 0x33, 0xFF, 0x44, 0x89, 0x7C, 0x24, 0x40, 0x8B, 0x84, 0x24, 0xE0, 0x00, 0x00, 0x00,
+//     0x89, 0x44, 0x24, 0x30, 0x8B, 0x84, 0x24, 0xD0, 0x00, 0x00, 0x00, 0x89, 0x44, 0x24, 0x20,
+// ];
+
+static AOB_GET_FILE_FROM_ARCHIVE_2_FUNC: &'static [u8] = &[
+    0x40, 0x53, 0x55, 0x56, 0x57, 0x41, 0x54, 0x41, 0x55, 0x41, 0x56, 0x41, 0x57, 0x48, 0x81, 0xEC,
+    0x88, 0x01, 0x00, 0x00, 0x48, 0xC7, 0x44, 0x24, 0x28, 0xFE, 0xFF, 0xFF,
+    0xFF,
+    // 0x48, 0x8B, 0x05,
+    // 0x6C, 0x8C, 0x44, 0x00, 0x48, 0x33, 0xC4, 0x48, 0x89, 0x84, 0x24, 0x70, 0x01, 0x00, 0x00, 0x41,
+    // 0x8B, 0xF1, 0x49, 0x8B, 0xF8, 0x4C, 0x8B, 0xF2, 0x4C, 0x8B, 0xF9, 0x48, 0x89, 0x54, 0x24, 0x20,
+    // 0x41, 0x83, 0xF9, 0x05,
 ];
 
-static mut TRAMPOLINE: *const () = std::ptr::null();
-type PfnLoadFromArchive = extern "fastcall" fn(a1: LPVOID, a2: LPVOID, a3: LPVOID, a4: i8) -> LPVOID;
+static AOB_GET_LOOSE_FILE_PATH_AFTER_ROOT_DIRECTORIES: &'static [u8] = &[
+    0xBA, 0x00, 0x03, 0x00, 0x00, 0x4C, 0x8B, 0x0C, 0xF9, 0x48, 0x8D, 0x44, 0x24, 0x30, 0x48, 0x8B,
+    0xCB, 0x48, 0x89, 0x44, 0x24, 0x20,
+];
 
-extern "fastcall" fn do_thing(a1: LPVOID, a2: LPVOID, a3: LPVOID, a4: i8) -> LPVOID {
+// "load file" is actually an async load
+// static mut LOAD_FILE_FROM_ARCHIVE_TRAMPOLINE: *const () = std::ptr::null();
+// static mut GET_FILE_FROM_ARCHIVE_TRAMPOLINE: *const () = std::ptr::null();
+static mut GET_FILE_FROM_ARCHIVE_2_TRAMPOLINE: *const () = std::ptr::null();
+// type PfnLoadFromArchive =
+//     extern "fastcall" fn(a1: LPVOID, a2: LPVOID, a3: LPVOID, a4: i8) -> LPVOID;
+// type PfnGetFileFromArchive = extern "fastcall" fn(
+//     this: LPVOID,
+//     unk: LPVOID,
+//     path: LPCSTR,
+//     unk2: LPVOID,
+//     unk3: DWORD,
+//     unk4: LPVOID,
+//     unk5: DWORD,
+// ) -> LPCSTR;
+type PfnGetFileFromArchive2 = extern "fastcall" fn(
+    a1: LPVOID,
+    a2: LPVOID,
+    a3: LPCSTR,
+    a4: u64,
+    load_from_archive: DWORD,
+    a6: LPVOID,
+    a7: DWORD,
+) -> LPVOID;
+
+// extern "fastcall" fn do_thing(a1: LPVOID, a2: LPVOID, a3: LPVOID, a4: i8) -> LPVOID {
+//     loop {
+//         if a2.is_null() {
+//             log::debug!("reading null file");
+//             break;
+//         }
+//         unsafe {
+//             let path_str = CStr::from_ptr(a2 as *const i8);
+//             let safe_path_str = path_str.to_string_lossy();
+//             log::info!("loading: {}", safe_path_str);
+//         }
+//         break;
+//     }
+//     unsafe {
+//         (std::mem::transmute::<_, PfnLoadFromArchive>(LOAD_FILE_FROM_ARCHIVE_TRAMPOLINE))(
+//             a1, a2, a3, a4,
+//         )
+//     }
+// }
+
+// extern "fastcall" fn hook_get_file_from_archive(
+//     this: LPVOID,
+//     unk: LPVOID,
+//     path: LPCSTR,
+//     unk2: LPVOID,
+//     unk3: DWORD,
+//     unk4: LPVOID,
+//     unk5: DWORD,
+// ) -> LPCSTR {
+//     loop {
+//         if path.is_null() {
+//             log::debug!("reading null file");
+//             break;
+//         }
+//         unsafe {
+//             let path_str = CStr::from_ptr(path as *const i8);
+//             let safe_path_str = path_str.to_string_lossy();
+//             log::info!("getting: {}", safe_path_str);
+//         }
+//         break;
+//     }
+//     unsafe {
+//         let ret = (std::mem::transmute::<_, PfnGetFileFromArchive>(
+//             GET_FILE_FROM_ARCHIVE_TRAMPOLINE,
+//         ))(this, unk, path, unk2, unk3, unk4, unk5);
+
+//         ret
+//     }
+// }
+
+static mut ROOT_DIR_PATHS: *mut *mut i8 = std::ptr::null_mut();
+
+extern "fastcall" fn hook_get_file_from_archive_2(
+    a1: LPVOID,
+    a2: LPVOID,
+    a3: LPCSTR,
+    a4: u64,
+    mut load_from_archive: DWORD,
+    a6: LPVOID,
+    a7: DWORD,
+) -> LPVOID {
     loop {
-        if a2.is_null() {
-            log::debug!("reading null file");
+        if a3.is_null() {
+            log::debug!("reading null file (func 2)");
             break;
         }
         unsafe {
-            let path_str = CStr::from_ptr(a2 as *const i8);
+            let path_str = CStr::from_ptr(a3 as *const i8);
             let safe_path_str = path_str.to_string_lossy();
-            log::info!("loading: {}", safe_path_str);
+
+            // if !ROOT_DIR_PATHS.is_null() && !ROOT_DIR_PATHS.offset(a4 as isize).is_null() {
+            //     let root_path_str = CStr::from_ptr(*ROOT_DIR_PATHS.offset(a4 as isize));
+            //     let safe_root_path_str = root_path_str.to_string_lossy();
+            //     log::debug!(
+            //         "getting (root): {} {}{}",
+            //         a4,
+            //         safe_root_path_str,
+            //         safe_path_str
+            //     );
+            // } else {
+            log::debug!("getting: {} {}", a4, safe_path_str);
+            // }
+
+            // check if the file exists
+            // if it does, override the load mode to use loose files
+            // (interesting that this codepath still exists in the release build!)
+            // Only path mount 5 should be overridden
+            // 2 is used for user data (.systemsave, save.lst, etc)
+            if a4 == 5 {
+                match std::fs::metadata(PathBuf::from("mods").join(safe_path_str.as_ref())) {
+                    Ok(metadata) => {
+                        if metadata.is_file() {
+                            load_from_archive = 0;
+                        }
+                    }
+                    _ => {}
+                }
+            }
         }
         break;
     }
-    unsafe { (std::mem::transmute::<_, PfnLoadFromArchive>(TRAMPOLINE))(a1, a2, a3, a4) }
+    unsafe {
+        let ret;
+        if load_from_archive > 0 {
+            ret = (std::mem::transmute::<_, PfnGetFileFromArchive2>(
+                GET_FILE_FROM_ARCHIVE_2_TRAMPOLINE,
+            ))(a1, a2, a3, a4, load_from_archive, a6, a7);
+        } else {
+            let path_str = CStr::from_ptr(a3 as *const i8);
+            let safe_path_str = path_str.to_string_lossy();
+            let newpath = CString::new(
+                PathBuf::from("mods")
+                    .join(safe_path_str.as_ref())
+                    .to_string_lossy()
+                    .as_ref(),
+            )
+            .unwrap();
+            let newpath_cstr = newpath.as_c_str();
+            ret = (std::mem::transmute::<_, PfnGetFileFromArchive2>(
+                GET_FILE_FROM_ARCHIVE_2_TRAMPOLINE,
+            ))(a1, a2, newpath_cstr.as_ptr(), a4, load_from_archive, a6, a7);
+        }
+
+        ret
+    }
 }
 
 fn log_init() {
@@ -102,7 +262,7 @@ fn log_init() {
 
     let config = Config::builder()
         .appender(Appender::builder().build("file", Box::new(file)))
-        .build(Root::builder().appender("file").build(LevelFilter::Debug))
+        .build(Root::builder().appender("file").build(LevelFilter::Warn))
         .unwrap();
 
     log4rs::init_config(config).unwrap();
@@ -114,21 +274,89 @@ fn init() {
     unsafe {
         let base_handle = GetModuleHandleA(std::ptr::null());
         let base_address = base_handle as LPVOID;
-        match aob_search(AOB_LOAD_FROM_ARCHIVE_FUNC, base_address, 1024 * 1024 * 12) {
-            Some(addr) => {
-                log::debug!("Address of load file func: {:p}", addr);
+        // match aob_search(AOB_LOAD_FROM_ARCHIVE_FUNC, base_address, 1024 * 1024 * 12) {
+        //     Some(addr) => {
+        //         log::debug!("Address of load file func: {:p}", addr);
 
-                let detour = RawDetour::new(addr as *const (), do_thing as *const ()).unwrap();
-                TRAMPOLINE = detour.trampoline();
+        //         let detour = RawDetour::new(addr as *const (), do_thing as *const ()).unwrap();
+        //         LOAD_FILE_FROM_ARCHIVE_TRAMPOLINE = detour.trampoline();
+        //         match detour.enable() {
+        //             Err(e) => {
+        //                 log::error!("unable to install hook: {}", e);
+        //             }
+        //             _ => {}
+        //         }
+        //     }
+        //     None => {
+        //         log::error!("Address of load file func not found!");
+        //     }
+        // }
+        // match aob_search(
+        //     AOB_GET_FILE_FROM_ARCHIVE_FUNC,
+        //     base_address,
+        //     1024 * 1024 * 12,
+        // ) {
+        //     Some(addr) => {
+        //         log::debug!("Address of get file func: {:p}", addr);
+
+        //         let detour =
+        //             RawDetour::new(addr as *const (), hook_get_file_from_archive as *const ())
+        //                 .unwrap();
+        //         GET_FILE_FROM_ARCHIVE_TRAMPOLINE = detour.trampoline();
+        //         match detour.enable() {
+        //             Err(e) => {
+        //                 log::error!("unable to install get file hook: {}", e);
+        //             }
+        //             _ => {}
+        //         }
+        //     }
+        //     None => {
+        //         log::error!("Address of get file func not found!");
+        //     }
+        // }
+        match aob_search(
+            AOB_GET_FILE_FROM_ARCHIVE_2_FUNC,
+            base_address,
+            1024 * 1024 * 12,
+        ) {
+            Some(addr) => {
+                log::debug!("Address of get file func 2: {:p}", addr);
+
+                let detour =
+                    RawDetour::new(addr as *const (), hook_get_file_from_archive_2 as *const ())
+                        .unwrap();
+                GET_FILE_FROM_ARCHIVE_2_TRAMPOLINE = detour.trampoline();
                 match detour.enable() {
                     Err(e) => {
-                        log::error!("unable to install hook: {}", e);
+                        log::error!("unable to install get file 2 hook: {}", e);
                     }
                     _ => {}
                 }
             }
             None => {
-                log::debug!("Address of load file func not found!");
+                log::error!("Address of get file func 2 not found!");
+            }
+        }
+
+        match aob_search(
+            AOB_GET_LOOSE_FILE_PATH_AFTER_ROOT_DIRECTORIES,
+            base_address,
+            1024 * 1024 * 12,
+        ) {
+            Some(addr) => {
+                // static MODS_PATH: &'static [u8; 6] = b"mods/\0";
+                // We need to interpret this instruction:
+                // lea    rcx,[rip+0x44b789]
+                let instr_offset = (addr as *mut i8).offset(-7);
+                let imm_offset = *((addr as *mut i8).offset(-4) as *mut u32) as isize;
+                ROOT_DIR_PATHS = instr_offset.offset(imm_offset) as *mut *mut i8;
+                log::info!("ROOT_DIR_PATHS: {:p}", ROOT_DIR_PATHS);
+
+                // let data_root = ROOT_DIR_PATHS.offset(5);
+                // *data_root = MODS_PATH.as_ptr() as *mut i8;
+            }
+            None => {
+                log::error!("AOB for loose file root directories not found");
             }
         }
     }
