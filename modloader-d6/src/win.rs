@@ -1,9 +1,12 @@
 use std::{
+    borrow::Borrow,
     ffi::{CStr, CString},
     path::PathBuf,
+    sync::RwLock,
 };
 
 use detour::RawDetour;
+use lazy_static::lazy_static;
 use log::LevelFilter;
 use log4rs::{
     append::file::FileAppender,
@@ -25,6 +28,10 @@ use winapi::{
         },
     },
 };
+
+lazy_static! {
+    static ref MOD_LOAD_ORDER: RwLock<Vec<PathBuf>> = RwLock::default();
+}
 
 fn aob_search(buf: &[u8], start: LPVOID, dist: usize) -> Option<LPVOID> {
     if buf.is_empty() {
@@ -228,28 +235,26 @@ extern "fastcall" fn hook_get_file_from_archive_2(
         break;
     }
     unsafe {
-        let ret;
-        if load_from_archive > 0 {
-            ret = (std::mem::transmute::<_, PfnGetFileFromArchive2>(
-                GET_FILE_FROM_ARCHIVE_2_TRAMPOLINE,
-            ))(a1, a2, a3, a4, load_from_archive, a6, a7);
-        } else {
-            let path_str = CStr::from_ptr(a3 as *const i8);
-            let safe_path_str = path_str.to_string_lossy();
-            let newpath = CString::new(
-                PathBuf::from("mods")
-                    .join(safe_path_str.as_ref())
-                    .to_string_lossy()
-                    .as_ref(),
-            )
-            .unwrap();
-            let newpath_cstr = newpath.as_c_str();
-            ret = (std::mem::transmute::<_, PfnGetFileFromArchive2>(
-                GET_FILE_FROM_ARCHIVE_2_TRAMPOLINE,
-            ))(a1, a2, newpath_cstr.as_ptr(), a4, load_from_archive, a6, a7);
+        let path_str = CStr::from_ptr(a3 as *const i8);
+        let safe_path_str = path_str.to_string_lossy();
+        let mod_load_order = MOD_LOAD_ORDER.read().unwrap();
+        for path in mod_load_order.iter() {
+            let dest_path = path.join(safe_path_str.as_ref());
+            match std::fs::metadata(&dest_path) {
+                Ok(metadata) => {
+                    if metadata.is_file() {
+                        let new_path = CString::new(dest_path.to_string_lossy().as_ref()).unwrap();
+                        return (std::mem::transmute::<_, PfnGetFileFromArchive2>(
+                            GET_FILE_FROM_ARCHIVE_2_TRAMPOLINE,
+                        ))(a1, a2, new_path.as_ptr(), a4, 0, a6, a7);
+                    }
+                }
+                _ => {}
+            }
         }
-
-        ret
+        return (std::mem::transmute::<_, PfnGetFileFromArchive2>(
+            GET_FILE_FROM_ARCHIVE_2_TRAMPOLINE,
+        ))(a1, a2, a3, a4, load_from_archive, a6, a7);
     }
 }
 
@@ -262,14 +267,40 @@ fn log_init() {
 
     let config = Config::builder()
         .appender(Appender::builder().build("file", Box::new(file)))
-        .build(Root::builder().appender("file").build(LevelFilter::Warn))
+        .build(Root::builder().appender("file").build(LevelFilter::Info))
         .unwrap();
 
     log4rs::init_config(config).unwrap();
 }
 
+fn init_mod_load_order() {
+    // Init mod load order
+    let mut mod_load_order = MOD_LOAD_ORDER.write().unwrap();
+    let read_dir = match std::fs::read_dir("mods") {
+        Ok(r) => r,
+        Err(_) => {
+            log::warn!("mods directory not found or accessible; mod load order will be empty");
+            return;
+        }
+    };
+    for entry in read_dir {
+        match entry {
+            Ok(entry) => {
+                if entry.metadata().unwrap().is_dir() {
+                    mod_load_order.push(entry.path());
+                }
+            }
+            Err(_) => continue,
+        }
+    }
+    log::info!("Mod load order: {:?}", mod_load_order.borrow());
+}
+
 fn init() {
     log_init();
+
+    init_mod_load_order();
+    log::info!("Mod load order initialized");
 
     unsafe {
         let base_handle = GetModuleHandleA(std::ptr::null());
@@ -350,7 +381,7 @@ fn init() {
                 let instr_offset = (addr as *mut i8).offset(-7);
                 let imm_offset = *((addr as *mut i8).offset(-4) as *mut u32) as isize;
                 ROOT_DIR_PATHS = instr_offset.offset(imm_offset) as *mut *mut i8;
-                log::info!("ROOT_DIR_PATHS: {:p}", ROOT_DIR_PATHS);
+                log::debug!("ROOT_DIR_PATHS: {:p}", ROOT_DIR_PATHS);
 
                 // let data_root = ROOT_DIR_PATHS.offset(5);
                 // *data_root = MODS_PATH.as_ptr() as *mut i8;
@@ -359,7 +390,11 @@ fn init() {
                 log::error!("AOB for loose file root directories not found");
             }
         }
+
+        log::info!("Hooks installed");
     }
+
+    log::info!("Fully loaded!");
 }
 
 #[allow(non_snake_case)]

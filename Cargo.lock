@@ -244,6 +244,7 @@ name = "makaikit-modloader-d6"
 version = "0.1.0-alpha.0"
 dependencies = [
  "detour",
+ "lazy_static",
  "log",
  "log4rs",
  "winapi 0.3.9",
