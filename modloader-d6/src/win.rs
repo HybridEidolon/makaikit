@@ -238,8 +238,8 @@ extern "fastcall" fn hook_get_file_from_archive_2(
         let path_str = CStr::from_ptr(a3 as *const i8);
         let safe_path_str = path_str.to_string_lossy();
         let mod_load_order = MOD_LOAD_ORDER.read().unwrap();
-        for path in mod_load_order.iter() {
-            let dest_path = path.join(safe_path_str.as_ref());
+        for mod_path in mod_load_order.iter() {
+            let dest_path = mod_path.join("files").join(safe_path_str.as_ref());
             match std::fs::metadata(&dest_path) {
                 Ok(metadata) => {
                     if metadata.is_file() {
