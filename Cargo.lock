@@ -231,6 +231,9 @@ dependencies = [
 [[package]]
 name = "makaikit-dsarcfl"
 version = "0.1.0-alpha.0"
+dependencies = [
+ "thiserror",
+]
 
 [[package]]
 name = "makaikit-fafullfs"

@@ -174,6 +174,10 @@ impl<'a, R: Read + Seek> ArchiveFileAccess<'a, R> {
     pub fn checksum(&self) -> u64 {
         self.checksum
     }
+
+    pub fn size(&self) -> u64 {
+        self.size
+    }
 }
 
 impl<'a, R: Read + Seek> Read for ArchiveFileAccess<'a, R> {
