@@ -213,6 +213,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "lz4_flex"
+version = "0.9.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "74141c8af4bb8136dafb5705826bdd9dce823021db897c1129191804140ddf84"
+dependencies = [
+ "twox-hash",
+]
+
+[[package]]
 name = "mach"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -256,6 +265,10 @@ dependencies = [
 [[package]]
 name = "makaikit-ykcmp"
 version = "0.1.0-alpha.0"
+dependencies = [
+ "lz4_flex",
+ "thiserror",
+]
 
 [[package]]
 name = "mmap-fixed"
@@ -436,6 +449,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cc88c725d61fc6c3132893370cac4a0200e3fedf5da8331c570664b1987f5ca2"
 
 [[package]]
+name = "static_assertions"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
+
+[[package]]
 name = "syn"
 version = "1.0.98"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -493,6 +512,16 @@ name = "traitobject"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "efd1f82c56340fdf16f2a953d7bda4f8fdffba13d93b00844c25572110b26079"
+
+[[package]]
+name = "twox-hash"
+version = "1.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
+dependencies = [
+ "cfg-if",
+ "static_assertions",
+]
 
 [[package]]
 name = "typemap"

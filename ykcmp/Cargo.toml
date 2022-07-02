@@ -2,3 +2,7 @@
 name = "makaikit-ykcmp"
 version = "0.1.0-alpha.0"
 edition = "2021"
+
+[dependencies]
+lz4_flex = "0.9"
+thiserror = "1"
