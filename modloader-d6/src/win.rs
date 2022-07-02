@@ -293,6 +293,7 @@ fn init_mod_load_order() {
             Err(_) => continue,
         }
     }
+    mod_load_order.reverse();
     log::info!("Mod load order: {:?}", mod_load_order.borrow());
 }
 
