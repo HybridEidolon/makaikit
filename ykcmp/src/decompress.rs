@@ -31,6 +31,14 @@ where
         }
 
         inner.read_exact(&mut r[..12])?;
+        let encoding = u32::from_le_bytes(unsafe { *(&r[0..4] as *const [u8] as *const [u8; 4]) });
+        if encoding != 4 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "invalid encoding (only encoding 4 currently supported)",
+            ));
+        }
+
         let decomp_len =
             u32::from_le_bytes(unsafe { *(&r[8..12] as *const [u8] as *const [u8; 4]) }) as u64;
 
