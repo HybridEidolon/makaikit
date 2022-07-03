@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "d6databases",
     "dll-injector-dinput8",
     "dsarcfl",
     "fafullfs",
