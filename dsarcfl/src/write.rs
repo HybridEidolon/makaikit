@@ -50,7 +50,7 @@ impl ArchiveWriter {
             return Err(WriteError::NameTooLong);
         }
         let mut file_name = [0; 0x74];
-        file_name.copy_from_slice(name.to_bytes());
+        (&mut file_name[..name.to_bytes().len()]).copy_from_slice(name.to_bytes());
 
         let start = self.buf.len();
 
@@ -63,7 +63,11 @@ impl ArchiveWriter {
     }
 
     pub fn finish(self) -> Result<Vec<u8>, WriteError> {
-        let mut out = Vec::with_capacity(self.buf.len());
+        let buf_len = self.buf.len();
+        let hdrs_size = self.files.len() * 0x80 + 0x70;
+        let total_size = 0x10 + hdrs_size + buf_len;
+
+        let mut out = Vec::with_capacity(total_size);
         out.write_all(b"DSARC FL")?;
         let count_bytes = (self.files.len() as u32).to_le_bytes();
         out.write_all(&count_bytes[..])?;
@@ -72,9 +76,11 @@ impl ArchiveWriter {
             out.write_all(&f.name[..])?;
             let size_bytes = (f.len as u32).to_le_bytes();
             out.write_all(&size_bytes[..])?;
-            let off_bytes = (f.off as u32).to_le_bytes();
+            let off_bytes = ((f.off + 0x10 + hdrs_size) as u32).to_le_bytes();
             out.write_all(&off_bytes[..])?;
+            out.write_all(&[0; 4])?;
         }
+        out.write_all(&[0u8; 0x70])?;
         out.write_all(&self.buf[..])?;
         Ok(out)
     }
@@ -96,9 +102,9 @@ impl<'a> Write for ArchiveFileWriter<'a> {
 impl<'a> Drop for ArchiveFileWriter<'a> {
     fn drop(&mut self) {
         let buf_len = self.archive.buf.len();
-        let pad_len = match buf_len % 16 {
+        let pad_len = match buf_len % 0x200 {
             0 => buf_len,
-            r => buf_len + (16 - r),
+            r => buf_len + (0x200 - r),
         };
         self.archive.buf.resize(pad_len, 0);
         self.archive.files.push(ArchiveFile {

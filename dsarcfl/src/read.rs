@@ -3,11 +3,13 @@ use std::{
     io::{self, Read, Seek},
 };
 
+#[derive(Debug)]
 pub struct Archive<R: Read + Seek> {
     inner: R,
     files: Vec<ArchiveFile>,
 }
 
+#[derive(Debug)]
 struct ArchiveFile {
     name_buf: [u8; 0x74],
     size: u32,

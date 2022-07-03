@@ -1,6 +1,7 @@
 use std::{
     borrow::Borrow,
     ffi::{CStr, CString},
+    fs::File,
     path::PathBuf,
     sync::RwLock,
 };
@@ -170,7 +171,7 @@ type PfnGetFileFromArchive2 = extern "fastcall" fn(
 //         unsafe {
 //             let path_str = CStr::from_ptr(path as *const i8);
 //             let safe_path_str = path_str.to_string_lossy();
-//             log::info!("getting: {}", safe_path_str);
+//             log::debug!("getting (fetch file): {}", safe_path_str);
 //         }
 //         break;
 //     }
@@ -237,6 +238,25 @@ extern "fastcall" fn hook_get_file_from_archive_2(
     unsafe {
         let path_str = CStr::from_ptr(a3 as *const i8);
         let safe_path_str = path_str.to_string_lossy();
+
+        // _generated replacements loading
+        {
+            let dest_path = PathBuf::from("mods/_generated").join(safe_path_str.as_ref());
+            match std::fs::metadata(&dest_path) {
+                Ok(metadata) => {
+                    if metadata.is_file() {
+                        let new_path = CString::new(dest_path.to_string_lossy().as_ref()).unwrap();
+                        log::debug!("Using generated {:?}", new_path);
+                        return (std::mem::transmute::<_, PfnGetFileFromArchive2>(
+                            GET_FILE_FROM_ARCHIVE_2_TRAMPOLINE,
+                        ))(a1, a2, new_path.as_ptr(), a4, 0, a6, a7);
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        // Mod loading
         let mod_load_order = MOD_LOAD_ORDER.read().unwrap();
         for mod_path in mod_load_order.iter() {
             let dest_path = mod_path.join("files").join(safe_path_str.as_ref());
@@ -286,7 +306,7 @@ fn init_mod_load_order() {
     for entry in read_dir {
         match entry {
             Ok(entry) => {
-                if entry.metadata().unwrap().is_dir() {
+                if entry.metadata().unwrap().is_dir() && entry.file_name() != "_generated" {
                     mod_load_order.push(entry.path());
                 }
             }
@@ -297,11 +317,70 @@ fn init_mod_load_order() {
     log::info!("Mod load order: {:?}", mod_load_order.borrow());
 }
 
+fn init_script_repack() {
+    let mod_load_order = MOD_LOAD_ORDER.read().unwrap();
+    let replacement_paths = mod_load_order
+        .iter()
+        .map(|p| p.join("scripts"))
+        .collect::<Vec<_>>();
+    let repl_paths_refs = replacement_paths
+        .iter()
+        .map(|p| p.as_path())
+        .collect::<Vec<_>>();
+
+    let src_file = match File::open("data/script.dat") {
+        Err(e) => {
+            log::error!("Unable to open data/script.dat to repack scripts: {e}");
+            return;
+        }
+        Ok(f) => f,
+    };
+
+    let mut src_archive = match makaikit_dsarcfl::Archive::open(src_file) {
+        Err(e) => {
+            log::error!("Unable to parse data/script.dat to repack scripts: {e}");
+            return;
+        }
+        Ok(a) => a,
+    };
+    log::debug!("Loaded data/script.dat");
+
+    let new_archive_buf =
+        match crate::scriptrepack::repack_scripts(&mut src_archive, &repl_paths_refs[..]) {
+            Err(e) => {
+                log::error!("Unable to repack scripts: {e}");
+                return;
+            }
+            Ok(a) => a,
+        };
+    log::debug!("Repacked scripts to buffer");
+
+    match std::fs::create_dir_all("mods/_generated/data") {
+        Err(e) => {
+            log::error!("Unable to create mods/_generated/data directory: {e}");
+            return;
+        }
+        _ => {}
+    }
+    log::debug!("Created _generated/data path for script.dat");
+
+    match std::fs::write("mods/_generated/data/script.dat", new_archive_buf) {
+        Err(e) => {
+            log::error!("Unable to create mods/_generated/data/script.dat: {e}");
+            return;
+        }
+        _ => {}
+    }
+    log::debug!("Wrote generated script.dat");
+}
+
 fn init() {
     log_init();
 
     init_mod_load_order();
     log::info!("Mod load order initialized");
+    init_script_repack();
+    log::info!("Script repack generated");
 
     unsafe {
         let base_handle = GetModuleHandleA(std::ptr::null());

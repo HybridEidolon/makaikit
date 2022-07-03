@@ -37,6 +37,7 @@ where
 
     // First, insert replacements into the archive
     for repl_path in replacement_paths {
+        log::debug!("Walking {repl_path:?} for lua scripts");
         for entry in WalkDir::new(repl_path) {
             match entry {
                 Err(e) => {
@@ -67,6 +68,9 @@ where
                         log::warn!("Skipping {:?} for script.dat replacement because the name {} was already inserted", entry.path(), name_string);
                         continue;
                     }
+
+                    log::debug!("Adding script {:?}", entry.path());
+
                     let name_cstring = CString::new(name_string.as_bytes()).unwrap();
                     let mut file_writer = new_archive.file(&name_cstring).unwrap();
                     let mut file_reader = match File::open(entry.path()) {
@@ -83,7 +87,9 @@ where
                 }
             }
         }
+        log::debug!("Walked {repl_path:?} for lua scripts");
     }
+    log::debug!("Walked mod directories");
 
     // Second, look for files to reinsert from the original archive that aren't already replaced
     for i in 0..source.len() {
@@ -93,13 +99,28 @@ where
                 return Err(ScriptRepackError::InvalidSourceFileName);
             }
             Ok(name) => name,
-        };
-        if !used_names.contains(orig_name) {
-            let name_cstring = CString::new(orig_name.as_bytes()).unwrap();
+        }
+        .to_owned();
+        if !used_names.contains(&orig_name) {
+            let name_cstring = match CString::new(orig_name.as_bytes()) {
+                Err(_) => {
+                    return Err(ScriptRepackError::InvalidSourceFileName);
+                }
+                Ok(name) => name,
+            };
             let mut file_writer = new_archive.file(&name_cstring)?;
-            std::io::copy(&mut orig_file, &mut file_writer)?;
+            match std::io::copy(&mut orig_file, &mut file_writer) {
+                Err(e) => {
+                    log::error!("Fatal: unable to copy original file {name_cstring:?}");
+                    return Err(ScriptRepackError::Io(e));
+                }
+                _ => {}
+            }
+            drop(file_writer);
+            log::debug!("Inserted original script {orig_name}");
         }
     }
+    log::debug!("Walked source archive for unreplaced scripts");
 
     Ok(new_archive.finish()?)
 }
