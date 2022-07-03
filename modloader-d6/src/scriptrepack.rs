@@ -63,6 +63,7 @@ where
                         .unwrap()
                         .to_string_lossy()
                         .into_owned();
+                    name_string.make_ascii_lowercase();
                     name_string.replace_range(name_string.rfind(".lua").unwrap().., ".lub");
                     if used_names.contains(&name_string) {
                         log::warn!("Skipping {:?} for script.dat replacement because the name {} was already inserted", entry.path(), name_string);
