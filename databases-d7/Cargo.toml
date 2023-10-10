@@ -1,9 +1,8 @@
 [package]
-name = "makaikit-d6databases"
+name = "makaikit-databases-d7"
 version = "0.1.0-alpha.0"
 edition = "2021"
 
 [dependencies]
-byteorder = "1"
-thiserror = "1"
+makaikit-databases-serde = { path = "../databases-serde" }
 serde = { version = "1", features = ["derive"] }

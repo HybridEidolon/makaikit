@@ -1,7 +1,9 @@
 [workspace]
 resolver = "2"
 members = [
-    "d6databases",
+    "databases-d6",
+    "databases-d7",
+    "databases-serde",
     "dll-injector-dinput8",
     "dsarcfl",
     "fafullfs",

@@ -2,18 +2,18 @@ use byteorder::{ReadBytesExt, LE};
 use serde::de;
 use std::{
     ffi::{CStr, FromBytesWithNulError},
-    io::{self, Read},
+    io::{self, Read, Write},
     str::Utf8Error,
 };
 
 pub struct Deserializer<'a> {
-    buf: &'a [u8],
+    pub buf: &'a [u8],
 }
 
 #[derive(Debug, thiserror::Error)]
 pub enum DeserializerError {
-    #[error("The type {0} is unsupported")]
-    TypeUnsupported(&'static str),
+    #[error("The Serde type {0} is unsupported")]
+    UnsupportedType(&'static str),
 
     #[error("Failed to parse C string")]
     CStrParseError(#[from] FromBytesWithNulError),
@@ -44,14 +44,14 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     where
         V: de::Visitor<'de>,
     {
-        Err(DeserializerError::TypeUnsupported("any"))
+        Err(DeserializerError::UnsupportedType("any"))
     }
 
-    fn deserialize_bool<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: de::Visitor<'de>,
     {
-        Err(DeserializerError::TypeUnsupported("bool"))
+        visitor.visit_bool(if self.buf.read_u8()? > 0 { true } else { false })
     }
 
     fn deserialize_i8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -128,14 +128,14 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     where
         V: de::Visitor<'de>,
     {
-        Err(DeserializerError::TypeUnsupported("char"))
+        Err(DeserializerError::UnsupportedType("char"))
     }
 
     fn deserialize_str<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: de::Visitor<'de>,
     {
-        Err(DeserializerError::TypeUnsupported("str"))
+        Err(DeserializerError::UnsupportedType("str"))
     }
 
     fn deserialize_string<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -156,21 +156,21 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     where
         V: de::Visitor<'de>,
     {
-        Err(DeserializerError::TypeUnsupported("bytes"))
+        Err(DeserializerError::UnsupportedType("bytes"))
     }
 
     fn deserialize_byte_buf<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: de::Visitor<'de>,
     {
-        Err(DeserializerError::TypeUnsupported("byte_buf"))
+        Err(DeserializerError::UnsupportedType("byte_buf"))
     }
 
     fn deserialize_option<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: de::Visitor<'de>,
     {
-        Err(DeserializerError::TypeUnsupported("option"))
+        Err(DeserializerError::UnsupportedType("option"))
     }
 
     fn deserialize_unit<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -199,14 +199,16 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     where
         V: de::Visitor<'de>,
     {
-        Err(DeserializerError::TypeUnsupported("newtype_struct"))
+        Err(DeserializerError::UnsupportedType("newtype_struct"))
     }
 
-    fn deserialize_seq<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: de::Visitor<'de>,
     {
-        Err(DeserializerError::TypeUnsupported("seq"))
+        let len = self.buf.read_u32::<LE>()?;
+
+        self.deserialize_tuple(len as usize, visitor)
     }
 
     fn deserialize_tuple<V>(mut self, len: usize, visitor: V) -> Result<V::Value, Self::Error>
@@ -268,7 +270,7 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     where
         V: de::Visitor<'de>,
     {
-        Err(DeserializerError::TypeUnsupported("map"))
+        Err(DeserializerError::UnsupportedType("map"))
     }
 
     fn deserialize_struct<V>(
@@ -292,45 +294,20 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     where
         V: de::Visitor<'de>,
     {
-        Err(DeserializerError::TypeUnsupported("enum"))
+        Err(DeserializerError::UnsupportedType("enum"))
     }
 
     fn deserialize_identifier<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: de::Visitor<'de>,
     {
-        Err(DeserializerError::TypeUnsupported("identifier"))
+        Err(DeserializerError::UnsupportedType("identifier"))
     }
 
     fn deserialize_ignored_any<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: de::Visitor<'de>,
     {
-        Err(DeserializerError::TypeUnsupported("ignored_any"))
+        Err(DeserializerError::UnsupportedType("ignored_any"))
     }
-}
-
-pub fn decode_database<R, T>(mut read: R) -> Result<Vec<T>, DeserializerError>
-where
-    R: Read,
-    T: de::DeserializeOwned,
-{
-    let count = read.read_u32::<LE>()? as usize;
-    let mut elements = Vec::with_capacity(count);
-    let mut read_buf = Vec::new();
-    for _ in 0..count {
-        let size = read.read_u32::<LE>()? as usize;
-        read_buf.resize(size, 0);
-
-        read.read_exact(&mut read_buf[..size])?;
-
-        let mut deserializer = Deserializer {
-            buf: &read_buf[..size],
-        };
-        let element = T::deserialize(&mut deserializer)?;
-        elements.push(element);
-
-        read_buf.clear();
-    }
-    Ok(elements)
 }
