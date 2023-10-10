@@ -1,9 +1,11 @@
 [workspace]
+resolver = "2"
 members = [
     "d6databases",
     "dll-injector-dinput8",
     "dsarcfl",
     "fafullfs",
     "modloader-d6",
+    "modloader-d7",
     "ykcmp",
 ]

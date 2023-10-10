@@ -24,4 +24,6 @@ jobs:
           path: |
             target/release/dinput8.dll
             target/release/makaikit_modloader_d6.dll
+            target/release/makaikit_modloader_d7.dll
+            target/release/fafullfs-unpack.exe
           retention-days: 7
