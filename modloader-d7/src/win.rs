@@ -200,7 +200,7 @@ fn parse_file_stem(base: &str) -> Option<RecordIdentifier> {
         Ok(v) => return Some(RecordIdentifier::Id(v)),
         Err(_) => {}
     }
-    Some(RecordIdentifier::EnumName(split.1.to_owned()))
+    Some(RecordIdentifier::EnumName(base.to_owned()))
 }
 
 fn repack_database<R: Read + Seek, T: DatabaseRecord>(
@@ -284,16 +284,17 @@ fn repack_database<R: Read + Seek, T: DatabaseRecord>(
 
             if file_name.ends_with(".patch.json") {
                 log::debug!("JSON Patch {}", dir_entry_path.display());
-                let name_identifier = match parse_file_stem(&file_stem) {
-                    None => {
-                        log::error!(
-                            "File stem {} does not identify a database record",
-                            file_stem
-                        );
-                        continue;
-                    }
-                    Some(i) => i,
-                };
+                let name_identifier =
+                    match parse_file_stem(&file_name.strip_suffix(".patch.json").unwrap()) {
+                        None => {
+                            log::error!(
+                                "File stem {} does not identify a database record",
+                                file_stem
+                            );
+                            continue;
+                        }
+                        Some(i) => i,
+                    };
                 let orig_record_maybe = match name_identifier {
                     RecordIdentifier::Id(id) => db_map.get(&id),
                     RecordIdentifier::EnumName(ref name) => db_map.iter().find_map(|e| {
@@ -349,16 +350,17 @@ fn repack_database<R: Read + Seek, T: DatabaseRecord>(
                 db_map.insert(new_record.database_id(), new_record);
             } else if file_name.ends_with(".merge.json") {
                 log::debug!("Merge patch {}", dir_entry_path.display());
-                let name_identifier = match parse_file_stem(&file_stem) {
-                    None => {
-                        log::error!(
-                            "File stem {} does not identify a database record",
-                            file_stem
-                        );
-                        continue;
-                    }
-                    Some(i) => i,
-                };
+                let name_identifier =
+                    match parse_file_stem(&file_name.strip_suffix(".merge.json").unwrap()) {
+                        None => {
+                            log::error!(
+                                "File stem {} does not identify a database record",
+                                file_stem
+                            );
+                            continue;
+                        }
+                        Some(i) => i,
+                    };
                 let orig_record_maybe = match name_identifier {
                     RecordIdentifier::Id(id) => db_map.get(&id),
                     RecordIdentifier::EnumName(ref name) => db_map.iter().find_map(|e| {
