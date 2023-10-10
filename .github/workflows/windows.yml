@@ -16,7 +16,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - run: cargo build --release --all-features
+      - run: cargo build --release --all --all-features
       - name: Dist
         uses: actions/upload-artifact@v3
         with:
