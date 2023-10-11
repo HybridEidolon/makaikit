@@ -143,6 +143,9 @@ impl<'a, 'de> de::Deserializer<'de> for &'a mut Deserializer<'de> {
         V: de::Visitor<'de>,
     {
         let len = self.buf.read_u32::<LE>()? as usize;
+        if len == 0 {
+            return visitor.visit_string(String::from(""));
+        }
         let mut text_buf = Vec::with_capacity(len);
         text_buf.resize(len, 0);
 

@@ -112,6 +112,10 @@ where
     }
 
     fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error> {
+        if v.len() == 0 {
+            self.w.write_u32::<LE>(0)?;
+            return Ok(());
+        }
         self.w.write_u32::<LE>(v.len() as u32 + 1)?;
         for byte in v.as_bytes() {
             self.w.write_u8(*byte)?;

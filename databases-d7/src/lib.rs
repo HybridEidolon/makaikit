@@ -1,11 +1,13 @@
 use serde::{Deserialize, Serialize};
 
+pub mod battleflag;
 pub mod bgm;
 pub mod characlass;
 pub mod cheatsetting;
 pub mod job;
 pub mod string;
 
+pub use self::battleflag::BattleFlagData;
 pub use self::bgm::BgmData;
 pub use self::characlass::CharaClassData;
 pub use self::cheatsetting::CheatSettingData;
