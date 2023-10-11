@@ -4,6 +4,7 @@ pub mod battleflag;
 pub mod bgm;
 pub mod characlass;
 pub mod character;
+pub mod charazukan;
 pub mod cheatsetting;
 pub mod job;
 pub mod string;

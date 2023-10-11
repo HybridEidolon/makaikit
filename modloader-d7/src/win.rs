@@ -19,7 +19,8 @@ use log4rs::{
     Config,
 };
 use makaikit_databases_d7::{
-    BattleFlagData, BgmData, CharaClassData, CharaData, CheatSettingData, JobData, StringData,
+    charazukan::CharaZukanData, BattleFlagData, BgmData, CharaClassData, CharaData,
+    CheatSettingData, JobData, StringData,
 };
 use makaikit_databases_serde::DatabaseRecord;
 use winapi::{
@@ -215,8 +216,6 @@ fn repack_database<R: Read + Seek, T: DatabaseRecord>(
     let mut entry = None;
     let archive_len = archive.len();
 
-    log::info!("Archive len {archive_len}");
-
     for index in 0..archive_len {
         let this_entry = archive.get_file(index).unwrap().unwrap();
         let entry_name = this_entry.path().to_str().unwrap();
@@ -236,21 +235,6 @@ fn repack_database<R: Read + Seek, T: DatabaseRecord>(
         }
         Ok(o) => o,
     };
-
-    for record in db_records.iter() {
-        std::fs::create_dir_all(format!("mods_export/databases/{}", name)).unwrap();
-        serde_json::to_writer_pretty(
-            File::create(format!(
-                "mods_export/databases/{}/{}_{}.json",
-                name,
-                record.database_id(),
-                record.database_enum_name()
-            ))
-            .unwrap(),
-            record,
-        )
-        .unwrap();
-    }
 
     let mut db_map = HashMap::<i32, T>::new();
     for record in db_records {
@@ -469,6 +453,7 @@ fn repack_databases() {
     repack_database::<_, BgmData>(&mut archive, "bgm");
     repack_database::<_, CharaClassData>(&mut archive, "characlass");
     repack_database::<_, CharaData>(&mut archive, "character");
+    repack_database::<_, CharaZukanData>(&mut archive, "charazukan");
     repack_database::<_, CheatSettingData>(&mut archive, "cheatsetting");
     repack_database::<_, JobData>(&mut archive, "job");
     repack_database::<_, StringData>(&mut archive, "string");

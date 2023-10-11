@@ -328,8 +328,12 @@ dependencies = [
 name = "makaikit-databases-d7"
 version = "0.1.0-alpha.0"
 dependencies = [
+ "anyhow",
+ "clap",
  "makaikit-databases-serde",
+ "makaikit-fafullfs",
  "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -396,6 +400,14 @@ dependencies = [
  "thiserror",
  "walkdir",
  "winapi 0.3.9",
+]
+
+[[package]]
+name = "makaikit-nlsd"
+version = "0.1.0-alpha.0"
+dependencies = [
+ "byteorder",
+ "thiserror",
 ]
 
 [[package]]

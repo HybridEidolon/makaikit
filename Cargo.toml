@@ -9,5 +9,6 @@ members = [
     "fafullfs",
     "modloader-d6",
     "modloader-d7",
+    "nlsd",
     "ykcmp",
 ]
