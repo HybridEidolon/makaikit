@@ -19,7 +19,7 @@ use log4rs::{
     Config,
 };
 use makaikit_databases_d7::{
-    BattleFlagData, BgmData, CharaClassData, CheatSettingData, JobData, StringData,
+    BattleFlagData, BgmData, CharaClassData, CharaData, CheatSettingData, JobData, StringData,
 };
 use makaikit_databases_serde::DatabaseRecord;
 use winapi::{
@@ -468,6 +468,7 @@ fn repack_databases() {
     repack_database::<_, BattleFlagData>(&mut archive, "battleflag");
     repack_database::<_, BgmData>(&mut archive, "bgm");
     repack_database::<_, CharaClassData>(&mut archive, "characlass");
+    repack_database::<_, CharaData>(&mut archive, "character");
     repack_database::<_, CheatSettingData>(&mut archive, "cheatsetting");
     repack_database::<_, JobData>(&mut archive, "job");
     repack_database::<_, StringData>(&mut archive, "string");
