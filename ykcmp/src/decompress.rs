@@ -51,7 +51,7 @@ where
 
         let decoder_inner = match encoding {
             4 => DecoderInner::Lz77(NisLz77Reader::new(inner)),
-            9 => {
+            8 | 9 => {
                 let compressed = vec![0u8; comp_len as usize];
                 let decompressed = lz4_flex::decompress(&compressed[..], decomp_len as usize)?;
 
