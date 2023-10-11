@@ -20,7 +20,7 @@ use log4rs::{
 };
 use makaikit_databases_d7::{
     charazukan::CharaZukanData, BattleFlagData, BgmData, CharaClassData, CharaData,
-    CheatSettingData, JobData, StringData,
+    CharaFeatureData, CheatSettingData, JobData, StringData,
 };
 use makaikit_databases_serde::DatabaseRecord;
 use winapi::{
@@ -453,6 +453,7 @@ fn repack_databases() {
     repack_database::<_, BgmData>(&mut archive, "bgm");
     repack_database::<_, CharaClassData>(&mut archive, "characlass");
     repack_database::<_, CharaData>(&mut archive, "character");
+    repack_database::<_, CharaFeatureData>(&mut archive, "charafeature");
     repack_database::<_, CharaZukanData>(&mut archive, "charazukan");
     repack_database::<_, CheatSettingData>(&mut archive, "cheatsetting");
     repack_database::<_, JobData>(&mut archive, "job");

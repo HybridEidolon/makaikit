@@ -62,6 +62,7 @@ fn main() -> Result<(), anyhow::Error> {
     unpack_db::<_, BgmData>(&mut archive, "bgm", &dest)?;
     unpack_db::<_, CharaClassData>(&mut archive, "characlass", &dest)?;
     unpack_db::<_, CharaData>(&mut archive, "character", &dest)?;
+    unpack_db::<_, CharaFeatureData>(&mut archive, "charafeature", &dest)?;
     unpack_db::<_, CharaZukanData>(&mut archive, "charazukan", &dest)?;
     unpack_db::<_, CheatSettingData>(&mut archive, "cheatsetting", &dest)?;
     unpack_db::<_, JobData>(&mut archive, "job", &dest)?;
