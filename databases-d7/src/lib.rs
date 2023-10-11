@@ -1,6 +1,10 @@
 use makaikit_databases_serde::DatabaseRecord;
 use serde::{Deserialize, Serialize};
 
+pub mod job;
+
+pub use self::job::JobData;
+
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EvilityInfo {
