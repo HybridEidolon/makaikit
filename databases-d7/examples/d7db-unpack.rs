@@ -58,6 +58,11 @@ fn main() -> Result<(), anyhow::Error> {
 
     let dest = args.out_dir.unwrap_or(PathBuf::from(""));
 
+    unpack_db::<_, ActData>(&mut archive, "act", &dest)?;
+    unpack_db::<_, ActEffectData>(&mut archive, "acteffect", &dest)?;
+    unpack_db::<_, ActFeatureData>(&mut archive, "actfeature", &dest)?;
+    unpack_db::<_, ActLearnData>(&mut archive, "actlearn", &dest)?;
+    unpack_db::<_, ActMapData>(&mut archive, "actmap", &dest)?;
     unpack_db::<_, BattleFlagData>(&mut archive, "battleflag", &dest)?;
     unpack_db::<_, BgmData>(&mut archive, "bgm", &dest)?;
     unpack_db::<_, CharaClassData>(&mut archive, "characlass", &dest)?;

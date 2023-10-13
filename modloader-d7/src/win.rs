@@ -18,10 +18,7 @@ use log4rs::{
     encode::pattern::PatternEncoder,
     Config,
 };
-use makaikit_databases_d7::{
-    charazukan::CharaZukanData, BattleFlagData, BgmData, CharaClassData, CharaData,
-    CharaFeatureData, CheatSettingData, JobData, StringData,
-};
+use makaikit_databases_d7::*;
 use makaikit_databases_serde::DatabaseRecord;
 use winapi::{
     shared::{
@@ -449,6 +446,11 @@ fn repack_database<R: Read + Seek, T: DatabaseRecord>(
 
 fn repack_databases() {
     let mut archive = makaikit_fafullfs::Archive::open(File::open("data.dat").unwrap()).unwrap();
+    repack_database::<_, ActData>(&mut archive, "act");
+    repack_database::<_, ActEffectData>(&mut archive, "acteffect");
+    repack_database::<_, ActFeatureData>(&mut archive, "actfeature");
+    repack_database::<_, ActLearnData>(&mut archive, "actlearn");
+    repack_database::<_, ActMapData>(&mut archive, "actmap");
     repack_database::<_, BattleFlagData>(&mut archive, "battleflag");
     repack_database::<_, BgmData>(&mut archive, "bgm");
     repack_database::<_, CharaClassData>(&mut archive, "characlass");
