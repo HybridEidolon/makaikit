@@ -242,7 +242,7 @@ fn repack_database<R: Read + Seek, T: DatabaseRecord>(
         let database_root_path = entry.join("databases").join(name);
         let db_read_dir = match database_root_path.read_dir() {
             Err(e) => {
-                log::info!(
+                log::debug!(
                     "Unable to open {}, moving on: {}",
                     database_root_path.display(),
                     e
