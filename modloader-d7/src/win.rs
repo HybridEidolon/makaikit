@@ -213,6 +213,7 @@ fn repack_database<R: Read + Seek, T: DatabaseRecord>(
     let mut entry = None;
     let archive_len = archive.len();
 
+    log::debug!("Finding db {name} in archive");
     for index in 0..archive_len {
         let this_entry = archive.get_file(index).unwrap().unwrap();
         let entry_name = this_entry.path().to_str().unwrap();
@@ -222,8 +223,14 @@ fn repack_database<R: Read + Seek, T: DatabaseRecord>(
             break;
         }
     }
-    let real_entry = archive.get_file(entry.unwrap()).unwrap().unwrap();
-    log::info!("Opened entry");
+    let entry = match entry {
+        None => {
+            log::error!("DB {name} not found");
+            return;
+        }
+        Some(v) => v,
+    };
+    let real_entry = archive.get_file(entry).unwrap().unwrap();
 
     let db_records = match makaikit_databases_serde::decode_database::<_, T>(real_entry) {
         Err(e) => {
@@ -266,7 +273,7 @@ fn repack_database<R: Read + Seek, T: DatabaseRecord>(
             let file_stem = dir_entry_path.file_stem().unwrap().to_string_lossy();
 
             if file_name.ends_with(".patch.json") {
-                log::debug!("JSON Patch {}", dir_entry_path.display());
+                log::info!("JSON Patch {}", dir_entry_path.display());
                 let name_identifier =
                     match parse_file_stem(&file_name.strip_suffix(".patch.json").unwrap()) {
                         None => {
@@ -295,7 +302,13 @@ fn repack_database<R: Read + Seek, T: DatabaseRecord>(
                     }
                     Some(r) => r,
                 };
-                let mut record_json = serde_json::to_value(orig_record).unwrap();
+                let mut record_json = match serde_json::to_value(orig_record) {
+                    Err(e) => {
+                        log::error!("Failed to convert {name} record to json");
+                        continue;
+                    }
+                    Ok(v) => v,
+                };
                 let json_patch =
                     match serde_json::from_reader::<_, json_patch::Patch>(&mut read_dir_file) {
                         Err(e) => {
@@ -332,7 +345,7 @@ fn repack_database<R: Read + Seek, T: DatabaseRecord>(
                 };
                 db_map.insert(new_record.database_id(), new_record);
             } else if file_name.ends_with(".merge.json") {
-                log::debug!("Merge patch {}", dir_entry_path.display());
+                log::info!("Merge patch {}", dir_entry_path.display());
                 let name_identifier =
                     match parse_file_stem(&file_name.strip_suffix(".merge.json").unwrap()) {
                         None => {
@@ -361,7 +374,13 @@ fn repack_database<R: Read + Seek, T: DatabaseRecord>(
                     }
                     Some(r) => r,
                 };
-                let mut record_json = serde_json::to_value(orig_record).unwrap();
+                let mut record_json = match serde_json::to_value(orig_record) {
+                    Err(e) => {
+                        log::error!("Failed to convert {name} record to json");
+                        continue;
+                    }
+                    Ok(v) => v,
+                };
                 let merge_patch =
                     match serde_json::from_reader::<_, serde_json::Value>(&mut read_dir_file) {
                         Err(e) => {
@@ -388,7 +407,7 @@ fn repack_database<R: Read + Seek, T: DatabaseRecord>(
                 };
                 db_map.insert(new_record.database_id(), new_record);
             } else if file_name.ends_with(".json") {
-                log::debug!("Record replacement {}", dir_entry_path.display());
+                log::info!("Record replacement {}", dir_entry_path.display());
                 let record = match serde_json::from_reader::<_, T>(&mut read_dir_file) {
                     Err(e) => {
                         log::error!(
@@ -411,6 +430,7 @@ fn repack_database<R: Read + Seek, T: DatabaseRecord>(
         db_records.push(value);
     }
 
+    log::debug!("Starting {name} database output");
     match std::fs::create_dir_all("mods/_generated/data/database") {
         Err(e) => {
             log::error!("Unable to create path mods/_generated/data/database: {}", e);
@@ -431,6 +451,7 @@ fn repack_database<R: Read + Seek, T: DatabaseRecord>(
         }
         Ok(f) => BufWriter::new(f),
     };
+    log::debug!("Created file {}", generated_path.display());
     match makaikit_databases_serde::encode_database(out_file, db_records) {
         Err(e) => {
             log::error!(
@@ -442,6 +463,7 @@ fn repack_database<R: Read + Seek, T: DatabaseRecord>(
         }
         _ => {}
     }
+    log::info!("Database {name} repacked");
 }
 
 fn repack_databases() {
