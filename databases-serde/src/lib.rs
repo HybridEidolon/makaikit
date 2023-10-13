@@ -21,7 +21,7 @@ where
     let count = read.read_u32::<LE>()? as usize;
     let mut elements = Vec::with_capacity(count);
     let mut read_buf = Vec::new();
-    for _ in 0..count {
+    for index in 0..count {
         let size = read.read_u32::<LE>()? as usize;
         read_buf.resize(size, 0);
 
@@ -31,6 +31,13 @@ where
             buf: &read_buf[..size],
         };
         let element = T::deserialize(&mut deserializer)?;
+        if !deserializer.buf.is_empty() {
+            return Err(DeserializerError::Custom(format!(
+                "Element {} of database's buffer was not fully read ({} bytes remain)",
+                index,
+                deserializer.buf.len(),
+            )));
+        }
         elements.push(element);
 
         read_buf.clear();

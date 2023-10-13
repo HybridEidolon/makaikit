@@ -19,6 +19,10 @@ pub mod character;
 pub mod charafeature;
 pub mod charazukan;
 pub mod cheatsetting;
+pub mod doping;
+pub mod drink;
+pub mod dungeon;
+pub mod evility;
 pub mod job;
 pub mod string;
 
@@ -41,6 +45,10 @@ pub use self::character::CharaData;
 pub use self::charafeature::CharaFeatureData;
 pub use self::charazukan::CharaZukanData;
 pub use self::cheatsetting::CheatSettingData;
+pub use self::doping::DopingData;
+pub use self::drink::DrinkData;
+pub use self::dungeon::DungeonData;
+pub use self::evility::EvilityData;
 pub use self::job::JobData;
 pub use self::string::StringData;
 

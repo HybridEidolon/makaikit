@@ -94,6 +94,10 @@ fn main() -> Result<(), anyhow::Error> {
     unpack_db::<_, CharaFeatureData>(&mut archive, "charafeature", &dest)?;
     unpack_db::<_, CharaZukanData>(&mut archive, "charazukan", &dest)?;
     unpack_db::<_, CheatSettingData>(&mut archive, "cheatsetting", &dest)?;
+    unpack_db::<_, DopingData>(&mut archive, "doping", &dest)?;
+    unpack_db::<_, DrinkData>(&mut archive, "drink", &dest)?;
+    unpack_db::<_, DungeonData>(&mut archive, "dungeon", &dest)?;
+    unpack_db::<_, EvilityData>(&mut archive, "evility", &dest)?;
     unpack_db::<_, JobData>(&mut archive, "job", &dest)?;
     unpack_db::<_, StringData>(&mut archive, "string", &dest)?;
 

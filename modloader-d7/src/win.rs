@@ -488,6 +488,10 @@ fn repack_databases() {
     repack_database::<_, CharaFeatureData>(&mut archive, "charafeature");
     repack_database::<_, CharaZukanData>(&mut archive, "charazukan");
     repack_database::<_, CheatSettingData>(&mut archive, "cheatsetting");
+    repack_database::<_, DopingData>(&mut archive, "doping");
+    repack_database::<_, DrinkData>(&mut archive, "drink");
+    repack_database::<_, DungeonData>(&mut archive, "dungeon");
+    repack_database::<_, EvilityData>(&mut archive, "evility");
     repack_database::<_, JobData>(&mut archive, "job");
     repack_database::<_, StringData>(&mut archive, "string");
 }
