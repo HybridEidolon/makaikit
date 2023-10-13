@@ -429,6 +429,7 @@ fn repack_database<R: Read + Seek, T: DatabaseRecord>(
     for (_key, value) in db_map {
         db_records.push(value);
     }
+    db_records.sort_by(|a, b| a.database_id().cmp(&b.database_id()));
 
     log::debug!("Starting {name} database output");
     match std::fs::create_dir_all("mods/_generated/data/database") {
