@@ -451,8 +451,15 @@ fn repack_databases() {
     repack_database::<_, ActFeatureData>(&mut archive, "actfeature");
     repack_database::<_, ActLearnData>(&mut archive, "actlearn");
     repack_database::<_, ActMapData>(&mut archive, "actmap");
+    repack_database::<_, AiData>(&mut archive, "ai");
+    repack_database::<_, AiPartsData>(&mut archive, "aiparts");
+    repack_database::<_, AnimeData>(&mut archive, "animedata");
+    repack_database::<_, AnimeBankData>(&mut archive, "animebank");
+    repack_database::<_, ArchiveData>(&mut archive, "archive");
+    repack_database::<_, AreaData>(&mut archive, "area");
     repack_database::<_, BattleFlagData>(&mut archive, "battleflag");
     repack_database::<_, BgmData>(&mut archive, "bgm");
+    repack_database::<_, BuData>(&mut archive, "bu");
     repack_database::<_, CharaClassData>(&mut archive, "characlass");
     repack_database::<_, CharaData>(&mut archive, "character");
     repack_database::<_, CharaFeatureData>(&mut archive, "charafeature");

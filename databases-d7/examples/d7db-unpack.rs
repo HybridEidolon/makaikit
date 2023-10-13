@@ -4,6 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use anyhow::Context;
 use clap::Parser;
 use makaikit_databases_d7::{charazukan::CharaZukanData, *};
 use makaikit_databases_serde::DatabaseRecord;
@@ -25,8 +26,14 @@ where
 
     let mut entry = None;
     for index in 0..archive_len {
-        let this_entry = archive.get_file(index).unwrap().unwrap();
-        let entry_name = this_entry.path().to_str().unwrap();
+        let this_entry = archive
+            .get_file(index)
+            .unwrap()
+            .with_context(|| format!("Unable to read archive {name} file index index {index}"))?;
+        let entry_name = this_entry
+            .path()
+            .to_str()
+            .with_context(|| format!("Database {name} file entry {index} had non-string name"))?;
         if entry_name == format!("data/database/{}.dat", name) {
             entry = Some(index);
             break;
@@ -36,16 +43,26 @@ where
         .get_file(entry.ok_or_else(|| anyhow::anyhow!("DB Entry {} not found", name))?)
         .unwrap()?;
 
-    let db_records = makaikit_databases_serde::decode_database::<_, T>(real_entry)?;
+    let db_records = makaikit_databases_serde::decode_database::<_, T>(real_entry)
+        .with_context(|| format!("Unable to decode data/database/{name}.dat"))?;
 
     for record in db_records.iter() {
-        std::fs::create_dir_all(path.join(name))?;
-        let out_file_path = path.join(name).join(format!(
+        let out_dir = path.join(name);
+        std::fs::create_dir_all(&out_dir)
+            .with_context(|| format!("Unable to create directories up to {}", out_dir.display()))?;
+        let out_file_path = out_dir.join(format!(
             "{}_{}.json",
             record.database_id(),
             record.database_enum_name()
         ));
-        serde_json::to_writer_pretty(File::create(&out_file_path)?, record)?;
+        serde_json::to_writer_pretty(File::create(&out_file_path)?, record).with_context(|| {
+            format!(
+                "Unable to serialize and write DB {} record {} ({})",
+                name,
+                record.database_id(),
+                record.database_enum_name()
+            )
+        })?;
     }
 
     Ok(())
@@ -63,8 +80,15 @@ fn main() -> Result<(), anyhow::Error> {
     unpack_db::<_, ActFeatureData>(&mut archive, "actfeature", &dest)?;
     unpack_db::<_, ActLearnData>(&mut archive, "actlearn", &dest)?;
     unpack_db::<_, ActMapData>(&mut archive, "actmap", &dest)?;
+    unpack_db::<_, AiData>(&mut archive, "ai", &dest)?;
+    unpack_db::<_, AiPartsData>(&mut archive, "aiparts", &dest)?;
+    unpack_db::<_, AnimeData>(&mut archive, "anime", &dest)?;
+    unpack_db::<_, AnimeBankData>(&mut archive, "animebank", &dest)?;
+    unpack_db::<_, ArchiveData>(&mut archive, "archive", &dest)?;
+    unpack_db::<_, AreaData>(&mut archive, "area", &dest)?;
     unpack_db::<_, BattleFlagData>(&mut archive, "battleflag", &dest)?;
     unpack_db::<_, BgmData>(&mut archive, "bgm", &dest)?;
+    unpack_db::<_, BuData>(&mut archive, "bu", &dest)?;
     unpack_db::<_, CharaClassData>(&mut archive, "characlass", &dest)?;
     unpack_db::<_, CharaData>(&mut archive, "character", &dest)?;
     unpack_db::<_, CharaFeatureData>(&mut archive, "charafeature", &dest)?;
