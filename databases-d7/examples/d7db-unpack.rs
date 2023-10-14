@@ -98,8 +98,10 @@ fn main() -> Result<(), anyhow::Error> {
     unpack_db::<_, DrinkData>(&mut archive, "drink", &dest)?;
     unpack_db::<_, DungeonData>(&mut archive, "dungeon", &dest)?;
     unpack_db::<_, EvilityData>(&mut archive, "evility", &dest)?;
+    unpack_db::<_, ItemStrengthenData>(&mut archive, "itemstrengthen", &dest)?;
     unpack_db::<_, JobData>(&mut archive, "job", &dest)?;
     unpack_db::<_, StringData>(&mut archive, "string", &dest)?;
+    unpack_db::<_, WishData>(&mut archive, "wish", &dest)?;
 
     Ok(())
 }

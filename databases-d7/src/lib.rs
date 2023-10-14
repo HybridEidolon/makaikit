@@ -23,8 +23,10 @@ pub mod doping;
 pub mod drink;
 pub mod dungeon;
 pub mod evility;
+pub mod itemstrengthen;
 pub mod job;
 pub mod string;
+pub mod wish;
 
 pub use self::act::ActData;
 pub use self::acteffect::ActEffectData;
@@ -49,8 +51,10 @@ pub use self::doping::DopingData;
 pub use self::drink::DrinkData;
 pub use self::dungeon::DungeonData;
 pub use self::evility::EvilityData;
+pub use self::itemstrengthen::ItemStrengthenData;
 pub use self::job::JobData;
 pub use self::string::StringData;
+pub use self::wish::WishData;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
