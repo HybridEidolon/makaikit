@@ -6,3 +6,7 @@ edition = "2021"
 [dependencies]
 byteorder = "1"
 thiserror = "1"
+
+[dev-dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
