@@ -56,7 +56,9 @@ impl<R: Read + Seek> Archive<R> {
         }
 
         let files_count =
-            u64::from_le_bytes(unsafe { *(&header_buf[8..16] as *const [u8] as *const [u8; 8]) });
+            u32::from_le_bytes(unsafe { *(&header_buf[8..12] as *const [u8] as *const [u8; 4]) });
+        let _unk =
+            u32::from_le_bytes(unsafe { *(&header_buf[12..16] as *const [u8] as *const [u8; 4]) });
         let paths_off =
             u64::from_le_bytes(unsafe { *(&header_buf[16..24] as *const [u8] as *const [u8; 8]) });
         let paths_len =
@@ -64,7 +66,7 @@ impl<R: Read + Seek> Archive<R> {
         let info_off =
             u64::from_le_bytes(unsafe { *(&header_buf[32..40] as *const [u8] as *const [u8; 8]) });
 
-        if paths_len > usize::MAX as u64 || files_count > usize::MAX as u64 {
+        if paths_len > usize::MAX as u64 || files_count > usize::MAX as u32 {
             return Err(Error::TooLarge);
         }
 
@@ -77,7 +79,7 @@ impl<R: Read + Seek> Archive<R> {
         for i in 0..files_count {
             let mut file_header_buf = [0u8; 48];
 
-            inner.seek(io::SeekFrom::Start(info_off + i * 48))?;
+            inner.seek(io::SeekFrom::Start(info_off + (i as u64) * 48))?;
             inner.read_exact(&mut file_header_buf[..48])?;
 
             let checksum = u64::from_le_bytes(unsafe {
