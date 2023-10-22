@@ -46,12 +46,10 @@ jobs:
           Copy-Item -Force target/release/makaikit_modloader_d7.dll $env:RUNNER_TEMP/dist/mkplugins
           Copy-Item -Force target/release/examples/fafullfs-unpack.exe $env:RUNNER_TEMP/dist/tools
           Copy-Item -Force target/release/examples/d7db-unpack.exe $env:RUNNER_TEMP/dist/tools
-          Compress-Archive -LiteralPath $env:RUNNER_TEMP/dist -DestinationPath $env:RUNNER_TEMP/makaikit-$env:GITHUB_REF_NAME.zip
-          Remove-Item -Recurse $env:RUNNER_TEMP/dist
 
       - name: Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: dist
-          path: ${{ runner.temp }}/makaikit-${{ github.ref_name }}.zip
+          name: makaikit-${{ github.ref_name }}.zip
+          path: ${{ runner.temp }}/dist
           retention-days: 7
