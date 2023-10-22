@@ -16,8 +16,28 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - run: cargo build --release --all --all-features
-      - run: |
+
+      - name: Setup cargo cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            $HOME/.cargo/bin/
+            $HOME/.cargo/registry/index/
+            $HOME/.cargo/registry/cache/
+            $HOME/.cargo/git/db/
+          key: ${{ runner.os }}-cargo
+
+      - name: Setup target build cache
+        uses: actions/cache@v3
+        with:
+          path: target/
+          key: ${{ runner.os }}-cargo-target
+
+      - name: Cargo release build
+        run: cargo build --release --all-features --all --examples
+
+      - name: Create dist archive
+        run: |
           New-Item -Force -ItemType Directory $env:TEMP/dist
           New-Item -Force -ItemType Directory $env:TEMP/dist/tools
           New-Item -Force -ItemType Directory $env:TEMP/dist/mkplugins
@@ -28,6 +48,7 @@ jobs:
           Copy-Item -Force target/release/examples/d7db-unpack.exe $env:TEMP/dist/tools
           Compress-Archive -LiteralPath $env:TEMP/dist -DestinationPath $env:TEMP/makaikit-$env:GITHUB_REF_NAME.zip
           Remove-Item -Recurse $env:TEMP/dist
+
       - name: Artifact
         uses: actions/upload-artifact@v3
         with:
