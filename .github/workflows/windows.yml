@@ -34,7 +34,7 @@ jobs:
           key: ${{ runner.os }}-cargo-target
 
       - name: Cargo release build
-        run: cargo build --release --all-features --all --examples
+        run: cargo build --release --all-features --all-targets
 
       - name: Create dist archive
         run: |
