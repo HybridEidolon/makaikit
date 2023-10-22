@@ -17,13 +17,20 @@ jobs:
         with:
           toolchain: stable
       - run: cargo build --release --all --all-features
-      - name: Dist
+      - run: |
+          New-Item -Force -ItemType Directory $env:TEMP/dist
+          New-Item -Force -ItemType Directory $env:TEMP/dist/tools
+          New-Item -Force -ItemType Directory $env:TEMP/dist/mkplugins
+          New-Item -Force -ItemType Directory $env:TEMP/dist/mods
+          Copy-Item -Force target/release/dinput8.dll $env:TEMP/dist
+          Copy-Item -Force target/release/makaikit_modloader_d7.dll $env:TEMP/dist/mkplugins
+          Copy-Item -Force target/release/examples/fafullfs-unpack.exe $env:TEMP/dist/tools
+          Copy-Item -Force target/release/examples/d7db-unpack.exe $env:TEMP/dist/tools
+          Compress-Archive -LiteralPath $env:TEMP/dist -DestinationPath $env:TEMP/makaikit-$env:GITHUB_REF_NAME.zip
+          Remove-Item -Recurse $env:TEMP/dist
+      - name: Artifact
         uses: actions/upload-artifact@v3
         with:
           name: dist
-          path: |
-            target/release/dinput8.dll
-            target/release/makaikit_modloader_d6.dll
-            target/release/makaikit_modloader_d7.dll
-            target/release/fafullfs-unpack.exe
+          path: $env:TEMP/makaikit-${{ github.ref_name }}.zip
           retention-days: 7
