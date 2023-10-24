@@ -495,6 +495,7 @@ fn repack_databases() {
     repack_database::<_, ItemData>(&mut archive, "item");
     repack_database::<_, ItemCustomData>(&mut archive, "itemcustom");
     repack_database::<_, ItemStrengthenData>(&mut archive, "itemstrengthen");
+    repack_database::<_, ItemTypeData>(&mut archive, "itemtype");
     repack_database::<_, JobData>(&mut archive, "job");
     repack_database::<_, StringData>(&mut archive, "string");
     repack_database::<_, WishData>(&mut archive, "wish");
