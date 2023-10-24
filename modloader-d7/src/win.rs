@@ -492,6 +492,7 @@ fn repack_databases() {
     repack_database::<_, DrinkData>(&mut archive, "drink");
     repack_database::<_, DungeonData>(&mut archive, "dungeon");
     repack_database::<_, EvilityData>(&mut archive, "evility");
+    repack_database::<_, ItemData>(&mut archive, "item");
     repack_database::<_, ItemStrengthenData>(&mut archive, "itemstrengthen");
     repack_database::<_, JobData>(&mut archive, "job");
     repack_database::<_, StringData>(&mut archive, "string");
