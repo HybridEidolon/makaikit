@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 makaikit-databases-serde = { path = "../databases-serde" }
 serde = { version = "1", features = ["derive"] }
+serde-big-array = "0.5"
 
 [dev-dependencies]
 makaikit-fafullfs = { path = "../fafullfs" }
