@@ -40,11 +40,15 @@ jobs:
           New-Item -Force -ItemType Directory $env:RUNNER_TEMP/dist-d7l/mkplugins
           New-Item -Force -ItemType Directory $env:RUNNER_TEMP/dist-d7l/mods
           Copy-Item -Force target/release/dinput8.dll $env:RUNNER_TEMP/dist-d7l
+          Copy-Item -Force README.md $env:RUNNER_TEMP/dist-d7l
+          Copy-Item -Force COPYING $env:RUNNER_TEMP/dist-d7l
           Copy-Item -Force target/release/makaikit_modloader_d7.dll $env:RUNNER_TEMP/dist-d7l/mkplugins
           New-Item -Force -ItemType Directory $env:RUNNER_TEMP/dist-d6l
           New-Item -Force -ItemType Directory $env:RUNNER_TEMP/dist-d6l/mkplugins
           New-Item -Force -ItemType Directory $env:RUNNER_TEMP/dist-d6l/mods
           Copy-Item -Force target/release/dinput8.dll $env:RUNNER_TEMP/dist-d6l
+          Copy-Item -Force README.md $env:RUNNER_TEMP/dist-d6l
+          Copy-Item -Force COPYING $env:RUNNER_TEMP/dist-d7l
           Copy-Item -Force target/release/makaikit_modloader_d6.dll $env:RUNNER_TEMP/dist-d6l/mkplugins
           New-Item -Force -ItemType Directory $env:RUNNER_TEMP/dist-tools
           Copy-Item -Force target/release/examples/fafullfs-unpack.exe $env:RUNNER_TEMP/dist-tools
