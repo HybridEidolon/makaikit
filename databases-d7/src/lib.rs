@@ -32,6 +32,7 @@ pub mod itemshoplineup;
 pub mod itemstrengthen;
 pub mod itemtype;
 pub mod job;
+pub mod stage;
 pub mod string;
 pub mod wish;
 
@@ -67,6 +68,7 @@ pub use self::itemshoplineup::ItemShopLineupData;
 pub use self::itemstrengthen::ItemStrengthenData;
 pub use self::itemtype::ItemTypeData;
 pub use self::job::JobData;
+pub use self::stage::StageData;
 pub use self::string::StringData;
 pub use self::wish::WishData;
 
