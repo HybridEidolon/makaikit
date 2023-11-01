@@ -1,6 +1,7 @@
 [package]
 name = "makaikit-dll-injector-dinput8"
 version = "0.1.0-alpha.0"
+license = "GPL-3.0-or-later"
 edition = "2021"
 
 [target.'cfg(target_os = "windows")'.dependencies.winapi]
@@ -10,7 +11,7 @@ features = [
     "guiddef",
     "libloaderapi",
     "sysinfoapi",
-    "unknwnbase"
+    "unknwnbase",
 ]
 
 [lib]
