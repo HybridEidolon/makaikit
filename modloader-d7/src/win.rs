@@ -492,6 +492,7 @@ fn repack_databases() {
     repack_database::<_, DrinkData>(&mut archive, "drink");
     repack_database::<_, DungeonData>(&mut archive, "dungeon");
     repack_database::<_, EvilityData>(&mut archive, "evility");
+    repack_database::<_, HospitalGachaData>(&mut archive, "hospitalgacha");
     repack_database::<_, InnocentAffinityData>(&mut archive, "innocentaffinity");
     repack_database::<_, InnocentData>(&mut archive, "innocent");
     repack_database::<_, ItemData>(&mut archive, "item");
