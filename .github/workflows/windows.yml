@@ -36,18 +36,37 @@ jobs:
 
       - name: Create dist archive
         run: |
-          New-Item -Force -ItemType Directory $env:RUNNER_TEMP/dist
-          New-Item -Force -ItemType Directory $env:RUNNER_TEMP/dist/tools
-          New-Item -Force -ItemType Directory $env:RUNNER_TEMP/dist/mkplugins
-          New-Item -Force -ItemType Directory $env:RUNNER_TEMP/dist/mods
-          Copy-Item -Force target/release/dinput8.dll $env:RUNNER_TEMP/dist
-          Copy-Item -Force target/release/makaikit_modloader_d7.dll $env:RUNNER_TEMP/dist/mkplugins
-          Copy-Item -Force target/release/examples/fafullfs-unpack.exe $env:RUNNER_TEMP/dist/tools
-          Copy-Item -Force target/release/examples/d7db-unpack.exe $env:RUNNER_TEMP/dist/tools
+          New-Item -Force -ItemType Directory $env:RUNNER_TEMP/dist-d7l
+          New-Item -Force -ItemType Directory $env:RUNNER_TEMP/dist-d7l/mkplugins
+          New-Item -Force -ItemType Directory $env:RUNNER_TEMP/dist-d7l/mods
+          Copy-Item -Force target/release/dinput8.dll $env:RUNNER_TEMP/dist-d7l
+          Copy-Item -Force target/release/makaikit_modloader_d7.dll $env:RUNNER_TEMP/dist-d7l/mkplugins
+          New-Item -Force -ItemType Directory $env:RUNNER_TEMP/dist-d6l
+          New-Item -Force -ItemType Directory $env:RUNNER_TEMP/dist-d6l/mkplugins
+          New-Item -Force -ItemType Directory $env:RUNNER_TEMP/dist-d6l/mods
+          Copy-Item -Force target/release/dinput8.dll $env:RUNNER_TEMP/dist-d6l
+          Copy-Item -Force target/release/makaikit_modloader_d6.dll $env:RUNNER_TEMP/dist-d6l/mkplugins
+          New-Item -Force -ItemType Directory $env:RUNNER_TEMP/dist-tools
+          Copy-Item -Force target/release/examples/fafullfs-unpack.exe $env:RUNNER_TEMP/dist-tools
+          Copy-Item -Force target/release/examples/d7db-unpack.exe $env:RUNNER_TEMP/dist-tools
+          Copy-Item -Force target/release/examples/nlsd-pack.exe $env:RUNNER_TEMP/dist-tools
+          Copy-Item -Force target/release/examples/nlsd-unpack.exe $env:RUNNER_TEMP/dist-tools
 
-      - name: Artifact
+      - name: Artifact D7L
         uses: actions/upload-artifact@v3
         with:
-          name: makaikit-${{ github.ref_name }}.zip
-          path: ${{ runner.temp }}/dist
+          name: makaikit-d7l-${{ github.ref_name }}.zip
+          path: ${{ runner.temp }}/dist-d7l
+          retention-days: 7
+      - name: Artifact D6L
+        uses: actions/upload-artifact@v3
+        with:
+          name: makaikit-d6l-${{ github.ref_name }}.zip
+          path: ${{ runner.temp }}/dist-d6l
+          retention-days: 7
+      - name: Artifact Tools
+        uses: actions/upload-artifact@v3
+        with:
+          name: makaikit-tools-${{ github.ref_name }}.zip
+          path: ${{ runner.temp }}/dist-tools
           retention-days: 7
